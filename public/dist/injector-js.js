@@ -94,6 +94,8 @@ injector.InjectionMapping.prototype = {
 
 injector.Injector.prototype = {
 
+  parentInjector: null,
+
 	map: function(type, name) {
 		var mappingID = this._getMappingID(type, name);
 		return this._mappings[mappingID] || this._createMapping(type, name, mappingID);
@@ -111,7 +113,7 @@ injector.Injector.prototype = {
 
 	hasMapping: function(type, name) {
 		var mappingID = this._getMappingID(type, name);
-		return this._mappings[mappingID]!==undefined;
+    return (this._mappings[mappingID] !== undefined) || (this.parentInjector !== null && this.parentInjector.hasMapping(type, name));
 	},
 
 	getInstance: function(type, name) {
@@ -126,7 +128,8 @@ injector.Injector.prototype = {
 	getMapping: function(type, name) {
 		if(this.hasMapping(type, name)) {
 			var mappingID = this._getMappingID(type, name);
-			return this._mappings[mappingID];
+			if(this._mappings[mappingID] !== undefined) return this._mappings[mappingID];
+      else return this.parentInjector.getMapping(type, name);
 		} else {
 			var nameError = name == undefined ? "" : " by name "+ name;
 			throw new Error("Mapping \"" + type + nameError + "\" was not found");
@@ -150,7 +153,19 @@ injector.Injector.prototype = {
 		}
 
 		this._postConstruct(object);
-	}
+	},
+
+  teardown: function() {
+    this._mappings = {};
+    this.map('injector').toValue(this);
+  },
+
+  createChildInjector: function() {
+    var childInjector = new injector.Injector;
+    childInjector.parentInjector = this;
+    return childInjector;
+  }
+
 };;injector.utils = {};
 /**
  * Parse the value of a object to find out how we should inject
