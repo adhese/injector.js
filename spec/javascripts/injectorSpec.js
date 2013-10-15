@@ -77,13 +77,13 @@ describe("Injector", function() {
 		injector.map('someValue', 'two').toValue(someValue2);
 
 		var someObject = {
-            otherValue1: 'inject(name="one"):someValue',
-            otherValue2: 'inject(name="two"):someValue'
+			otherValue1: 'inject(name="one"):someValue',
+			otherValue2: 'inject(name="two"):someValue'
 		};
 		injector.injectInto(someObject);
 
 		expect(someObject.otherValue1).toBe(someValue1);
-        expect(someObject.otherValue2).toBe(someValue2);
+		expect(someObject.otherValue2).toBe(someValue2);
 	});
 
 	it("Calls post constructs", function() {
@@ -193,73 +193,129 @@ describe("Injector", function() {
 		expect(injector.getInstance('injector')).toBe(injector);
 	});
 
-  it("can teardown itself (aka. unmapAll)", function() {
-    var someValue = "Hello World";
-    injector.map('someValue').toValue(someValue);
-    expect(injector.getInstance('someValue')).toBe(someValue);
-    injector.map('someValue2').toValue(someValue);
-    expect(injector.getInstance('someValue2')).toBe(someValue);
+	it("can teardown itself (aka. unmapAll)", function() {
+		var someValue = "Hello World";
+		injector.map('someValue').toValue(someValue);
+		expect(injector.getInstance('someValue')).toBe(someValue);
+		injector.map('someValue2').toValue(someValue);
+		expect(injector.getInstance('someValue2')).toBe(someValue);
 
-    injector.teardown();
+		injector.teardown();
 
-    expect(function(){injector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
-    expect(function(){injector.getInstance('someValue2')}).toThrow(new Error('Cannot return instance "someValue2" because no mapping has been found'));
-  });
+		expect(function(){injector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
+		expect(function(){injector.getInstance('someValue2')}).toThrow(new Error('Cannot return instance "someValue2" because no mapping has been found'));
+	});
 
-  it("has a parentInjector property", function() {
-    expect(injector.parentInjector).not.toBeUndefined();
-  });
+	describe("childInjector", function() {
 
-  it("can create a childInjector", function() {
-    var childInjector = injector.createChildInjector();
+		it("defaults to null when it was not instantiated by a parent", function() {
+			expect(injector.parentInjector).toBeNull();
+		});
 
-    expect(childInjector).not.toBeNull;
-    expect(childInjector.parentInjector).toBe(injector);
-    expect(childInjector).not.toBe(injector);
-  });
+		it("can create a childInjector which references to its parent", function() {
+			var childInjector = injector.createChildInjector();
 
-  it("validates parent mappings", function() {
-    var childInjector = injector.createChildInjector();
+			expect(childInjector).not.toBeNull();
+			expect(childInjector.parentInjector).toBe(injector);
+			expect(childInjector).not.toBe(injector);
+		});
 
-    expect(injector.hasMapping('someValue')).toBe(false);
-    expect(childInjector.hasMapping('someValue')).toBe(false);
+		it("has no parentInjector when it is the top parent", function() {
+			expect(injector.parentInjector).toBeNull();
 
-    var someValue = "Hello World";
-    injector.map('someValue').toValue(someValue);
+			var childInjector = injector.createChildInjector();
+			expect(injector.parentInjector).toBeNull();
+		});
 
-    expect(injector.hasMapping('someValue')).toBe(true);
-    expect(childInjector.hasMapping('someValue')).toBe(true);
-  });
+		it("validates mappings on a child that stem from its parent as if it were its own mappings", function() {
+			var childInjector = injector.createChildInjector();
 
-  it("does not validates child mappings", function() {
-    var childInjector = injector.createChildInjector();
-    var someValue = "Hello World";
-    childInjector.map('someValue').toValue(someValue);
+			expect(injector.hasMapping('someValue')).toBe(false);
+			expect(childInjector.hasMapping('someValue')).toBe(false);
 
-    expect(childInjector.hasMapping('someValue')).toBe(true);
-    expect(injector.hasMapping('someValue')).toBe(false);
-  });
+			var someValue = "Hello World";
+			injector.map('someValue').toValue(someValue);
 
-  it("returns parent mappings", function() {
-    var childInjector = injector.createChildInjector();
+			expect(injector.hasMapping('someValue')).toBe(true);
+			expect(childInjector.hasMapping('someValue')).toBe(true);
+		});
 
-    expect(function(){injector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
-    expect(function(){childInjector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
+		it("hides mappings from its parent", function() {
+			var childInjector = injector.createChildInjector();
+			var someValue = "Hello World";
+			childInjector.map('someValue').toValue(someValue);
 
-    var someValue = "Hello World";
-    injector.map('someValue').toValue(someValue);
+			expect(childInjector.hasMapping('someValue')).toBe(true);
+			expect(injector.hasMapping('someValue')).toBe(false);
+		});
 
-    expect(injector.getInstance('someValue')).toBe(someValue);
-    expect(childInjector.getInstance('someValue')).toBe(someValue);
-  });
+		it("returns the instance that was mapped on the parent", function() {
+			var childInjector = injector.createChildInjector();
 
-  it("does not return child mappings", function() {
-    var childInjector = injector.createChildInjector();
-    var someValue = "Hello World";
-    childInjector.map('someValue').toValue(someValue);
+			var someValue = "Hello World";
+			injector.map('someValue').toValue(someValue);
 
-    expect(childInjector.getInstance('someValue')).toBe(someValue);
-    expect(function(){injector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
-  });
+			expect(injector.getInstance('someValue')).toBe(someValue);
+			expect(childInjector.getInstance('someValue')).toBe(someValue);
+		});
+
+		it("throws an error when the parent tries to get access to a mapping that was only mapped on the childInjector", function() {
+			var childInjector = injector.createChildInjector();
+			var someValue = "Hello World";
+			childInjector.map('someValue').toValue(someValue);
+
+			expect(childInjector.getInstance('someValue')).toBe(someValue);
+			expect(function() {injector.getInstance('someValue')}).toThrow(new Error('Cannot return instance "someValue" because no mapping has been found'));
+		});
+
+		it("can create multiple child injectors", function() {
+			var injectorChild1 = injector.createChildInjector(),
+					injectorChild2 = injector.createChildInjector(),
+					injector1Child = injectorChild1.createChildInjector();
+
+			expect(injector.parentInjector).toBeNull();
+			expect(injectorChild1.parentInjector).toBe(injector);
+			expect(injectorChild2.parentInjector).toBe(injector);
+			expect(injector1Child.parentInjector).toBe(injectorChild1);
+		});
+
+		it("can access mappings from a parent multiple levels up", function() {
+			var injectorChild1 = injector.createChildInjector(),
+					injector1Child = injectorChild1.createChildInjector();
+
+			var someValue = "Hello World";
+			injector.map('someValue').toValue(someValue);
+			var otherValue = "Hello child!";
+			injectorChild1.map('otherValue').toValue(otherValue);
+
+			expect(injector.getInstance('someValue')).toBe(someValue);
+			expect(injectorChild1.getInstance('someValue')).toBe(someValue);
+			expect(injector1Child.getInstance('someValue')).toBe(someValue);
+
+			expect(injectorChild1.getInstance('otherValue')).toBe(otherValue);
+			expect(injector1Child.getInstance('otherValue')).toBe(otherValue);
+		});
+
+		it("can create mappings for keys that already exist on the parent", function() {
+			var injectorChild = injector.createChildInjector();
+
+			var someValue = "Hello World";
+			injector.map('someValue').toValue(someValue);
+			var otherValue = "Hello child!";
+
+			expect(function() {
+				injectorChild.map('someValue').toValue(otherValue);
+			}).not.toThrow(new Error('Already has mapping for someValue'));
+		});
+
+		it("force maps itself as the injector", function() {
+			var injectorChild = injector.createChildInjector();
+
+			expect(injector).not.toBe(injectorChild);
+			expect(injector.getInstance('injector')).toBe(injector);
+			expect(injectorChild.getInstance('injector')).toBe(injectorChild);
+		});
+
+	});
 
 });
