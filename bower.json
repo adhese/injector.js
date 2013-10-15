@@ -1,6 +1,6 @@
 {
 	"name": "injector.js",
-	"version": "0.1.4",
+	"version": "0.1.5",
 	"description": "Dependency injection for JavaScript, inspired by SwiftSuspenders.",
 	"keywords": ["injector.js","injector","injector-js","injectorJS"],
 	"homepage": "https://github.com/biggerboat/injector.js",
