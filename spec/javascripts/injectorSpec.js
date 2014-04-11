@@ -216,6 +216,26 @@ describe("Injector", function() {
 		expect(injector.getInstance('SomeObject').someValue).toBe(someValue);
 	});
 
+	it("injects into returned instance when mapped with toSingleton", function() {
+		var someValue = 'someValueToInject';
+		var SomeObject = function() {
+			this.someValue = 'inject';
+		};
+		injector.map('someValue').toValue(someValue);
+		injector.map('SomeObject').toSingleton(SomeObject);
+		expect(injector.getInstance('SomeObject').someValue).toBe(someValue);
+	});
+
+	it("instantiates the singleton on demand", function() {
+		var someValue = 'someValueToInject';
+		var SomeObject = function() {
+			this.someValue = 'inject';
+		};
+		injector.map('SomeObject').toSingleton(SomeObject);
+		injector.map('someValue').toValue(someValue);
+		expect(injector.getInstance('SomeObject').someValue).toBe(someValue);
+	});
+
 
 	describe("childInjector", function() {
 
