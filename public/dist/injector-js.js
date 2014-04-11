@@ -5,6 +5,7 @@ var injector = {};;injector.InjectionMapping = function(type, name, id) {
 
 	this._value = null;
 	this._toType = null;
+	this._isSingleton = false;
 
 	this._isValid = function() {
 		return this._value!=null || this._toType!=null;
@@ -38,7 +39,8 @@ injector.InjectionMapping.prototype = {
 	},
 
 	toSingleton: function(type) {
-		this.toValue(new type());
+		this.toType(type);
+		this._isSingleton = true;
 	},
 
 	getValue: function(injector) {
@@ -52,6 +54,9 @@ injector.InjectionMapping.prototype = {
 		} else if(this._toType!=null) {
 			var value = new this._toType();
 			injector.injectInto(value);
+			if(this._isSingleton) {
+				this._value = value;
+			}
 			return value;
 		}
 	}
