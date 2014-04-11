@@ -41,7 +41,7 @@ injector.InjectionMapping.prototype = {
 		this.toValue(new type());
 	},
 
-	getValue: function() {
+	getValue: function(injector) {
 		if(!this._isValid()) {
 			throw new Error("Could not get value for "+this._id+" because the mapping is invalid");
 			return;
@@ -50,7 +50,9 @@ injector.InjectionMapping.prototype = {
 		if(this._value!=null) {
 			return this._value;
 		} else if(this._toType!=null) {
-			return new this._toType();
+			var value = new this._toType();
+			injector.injectInto(value);
+			return value;
 		}
 	}
 };

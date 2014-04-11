@@ -206,6 +206,17 @@ describe("Injector", function() {
 		expect(function() {injector.getInstance('someValue2')}).toThrow(new Error('Cannot return instance "someValue2" because no mapping has been found'));
 	});
 
+	it("injects into returned instance when mapped with toType", function() {
+		var someValue = 'someValueToInject';
+		var SomeObject = function() {
+			this.someValue = 'inject';
+		};
+		injector.map('someValue').toValue(someValue);
+		injector.map('SomeObject').toType(SomeObject);
+		expect(injector.getInstance('SomeObject').someValue).toBe(someValue);
+	});
+
+
 	describe("childInjector", function() {
 
 		it("defaults to null when it was not instantiated by a parent", function() {

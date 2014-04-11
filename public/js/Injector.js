@@ -71,7 +71,7 @@ injector.Injector.prototype = {
 
 	getInstance: function(type, name) {
 		if(this.hasMapping(type, name)) {
-			return this.getMapping(type, name).getValue();
+			return this.getMapping(type, name).getValue(this);
 		} else {
 			var nameError = name == undefined ? "" : " by name "+ name;
 			throw new Error("Cannot return instance \"" + type + nameError + "\" because no mapping has been found");
